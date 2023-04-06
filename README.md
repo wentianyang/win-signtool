@@ -5,10 +5,10 @@
 签名命令：
 
 ```
-signtool sign /n "公司" /t http://timestamp.digicert.com fd SHA1 xxx文件
+signtool sign /n "公司" /t http://timestamp.digicert.com /fd SHA1 xxx文件
 ```
 
 ## SHA256 签名
 ```
-signtool sign /n "公司" /tr http://timestamp.digicert.com /td SHA256 xxx文件
+signtool sign /n "公司" /as /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 xxx文件
 ```

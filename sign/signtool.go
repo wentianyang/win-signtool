@@ -11,7 +11,8 @@ func Sign(dirPath string, sign func(string)) {
 		// 打印文件名
 		println(filename)
 		// 执行签名
-		signFile(filename)
+		sha1SignFile(filename)
+		sha256SignFile(filename)
 		// 返回信息
 		sign(filename)
 	})
@@ -26,16 +27,6 @@ func walkDir(dirPth string, f func(string)) error {
 		f(filename)
 		return nil
 	})
-}
-
-// 执行Signtool.exe签名
-func signFile(filename string) {
-	// 获取当前目录
-	dir, _ := os.Getwd()
-	// 执行签名
-	cmd := exec.Command(dir+"/Signtool.exe", "sign", "/f", dir+"/cert.pfx", "/p", "123456", filename)
-	// 执行命令
-	cmd.Run()
 }
 
 // SHA1签名

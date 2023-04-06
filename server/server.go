@@ -5,8 +5,9 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"syscall"
+	"path/filepath"
 
+	"github.com/alexflint/go-filemutex"
 	"github.com/yangtianwen/win-signtool/sign"
 )
 
@@ -52,17 +53,15 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 获取文件句柄对应的文件描述符
-	fd := f.Fd()
-
 	// 获取文件锁
-	lock := &syscall.Flock_t{Type: syscall.F_WRLCK}
-	if err := syscall.FcntlFlock(fd, syscall.F_SETLK, lock); err != nil {
+	mutex, _ := filemutex.New(filepath.Join(".", handler.Filename))
+	if err := mutex.Lock(); err != nil {
 		fmt.Println("Error Acquiring File Lock")
 		fmt.Println(err)
 		f.Close()
 		return
 	}
+	defer mutex.Unlock()
 
 	// 写入文件到服务器
 	_, err = io.Copy(f, file)

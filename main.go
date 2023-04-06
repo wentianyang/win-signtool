@@ -7,17 +7,20 @@ import (
 )
 
 func main() {
-	// 获取当前目录
-	dir, _ := os.Getwd()
-	// 遍历目录
-	walkDir(dir, func(filename string) {
-		// 打印文件名
-		println(filename)
-		// 执行 sha1 签名
-		sha1SignFile(filename)
-		// 执行 sha256 签名
-		sha256SignFile(filename)
-	})
+	// // 获取当前目录
+	// dir, _ := os.Getwd()
+	// // 遍历目录
+	// walkDir(dir, func(filename string) {
+	// 	// 打印文件名
+	// 	println(filename)
+	// 	// 执行 sha1 签名
+	// 	sha1SignFile(filename)
+	// 	// 执行 sha256 签名
+	// 	sha256SignFile(filename)
+	// })
+
+	// 启动服务
+	server()
 }
 
 // 循环遍历文件夹下的所有文件
@@ -52,3 +55,5 @@ func sha256SignFile(filename string) {
 	sha256Cmd := exec.Command("signtool", "sign", "/n", "公司名称", "/as", "/fd", "SHA256", "/tr", "http://timestamp.digicert.com", "/td", "SHA256", filename)
 	sha256Cmd.CombinedOutput()
 }
+
+// 钉钉机器人

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"syscall"
 
 	"github.com/yangtianwen/win-signtool/sign"
 )
@@ -43,15 +44,37 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("File Size: %+v\n", handler.Size)
 	fmt.Printf("MIME Type: %+v\n", handler.Header.Get("Content-Type"))
 
-	// 写入文件到服务器
+	// 创建文件
 	f, err := os.OpenFile(handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Println("Error Saving File")
 		fmt.Println(err)
 		return
 	}
-	defer f.Close()
-	io.Copy(f, file)
+
+	// 获取文件句柄对应的文件描述符
+	fd := f.Fd()
+
+	// 获取文件锁
+	lock := &syscall.Flock_t{Type: syscall.F_WRLCK}
+	if err := syscall.FcntlFlock(fd, syscall.F_SETLK, lock); err != nil {
+		fmt.Println("Error Acquiring File Lock")
+		fmt.Println(err)
+		f.Close()
+		return
+	}
+
+	// 写入文件到服务器
+	_, err = io.Copy(f, file)
+	if err != nil {
+		fmt.Println("Error Writing File Content")
+		fmt.Println(err)
+		f.Close()
+		return
+	}
+
+	// 关闭文件
+	f.Close()
 
 	fmt.Fprintf(w, "Successfully Uploaded File\n")
 

@@ -5,11 +5,9 @@ import (
 	"io"
 	"net/http"
 	"os"
-)
 
-// 使用 gin 框架,创建一个文件上传服务
-// 上传文件到指定目录
-// 上传成功后,执行签名
+	"github.com/yangtianwen/win-signtool/sign"
+)
 
 func Server() {
 
@@ -21,11 +19,12 @@ func Server() {
 		fmt.Println("Error Starting Server:", err)
 		return
 	}
+	println("服务开启: http://localhost:8080")
 }
 
 func uploadFile(w http.ResponseWriter, r *http.Request) {
 	// 解析表单
-	r.ParseMultipartForm(10 << 20) // 10MB
+	// r.ParseMultipartForm(10 << 20) // 10MB
 
 	// 获取文件句柄
 	file, handler, err := r.FormFile("file")
@@ -39,7 +38,6 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	// 输出文件信息
 	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
 	fmt.Printf("File Size: %+v\n", handler.Size)
-	fmt.Printf("MIME Type: %+v\n", handler.Header.Get("Content-Type"))
 
 	// 写入文件到服务器
 	f, err := os.OpenFile(handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
@@ -48,8 +46,12 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
-	defer f.Close()
+	f.Close()
 	io.Copy(f, file)
 
 	fmt.Fprintf(w, "Successfully Uploaded File\n")
+
+	sign.Sign(handler.Filename, func(msg string) {
+		fmt.Println(msg)
+	})
 }

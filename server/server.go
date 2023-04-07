@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/yangtianwen/win-signtool/sign"
 )
@@ -15,6 +14,7 @@ func Server() {
 	http.Handle("/", http.FileServer(http.Dir("./client")))
 
 	http.HandleFunc("/upload", uploadFile)
+	http.HandleFunc("/download", downloadFile)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		fmt.Println("Error Starting Server:", err)
@@ -55,28 +55,19 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	sign.Sign(handler.Filename, func(e error, msg string) {
 		fmt.Fprintln(w, msg)
 
-		// 打开签名后的文件
-		fileToDownload, err := os.Open(handler.Filename)
-		if err != nil {
-			fmt.Println("Error Opening Signed File")
-			fmt.Println(err)
-			return
-		}
-		defer fileToDownload.Close()
-
-		// 设置响应头部，以便将文件下载到客户端
-		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(handler.Filename)))
-
-		// 将签名后的文件发送给客户端
-		_, err = io.Copy(w, fileToDownload)
-		if err != nil {
-			fmt.Println("Error Writing File Content")
-			fmt.Println(err)
-			return
-		}
-
-		// 删除上传的文件和签名后的文件
-		os.Remove(handler.Filename)
+		downloadFile(w, r)
 	})
+}
+
+// 文件下载
+func downloadFile(w http.ResponseWriter, r *http.Request) {
+
+	filename := "example.pdf"
+	filepath := "./path/to/example.pdf"
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+
+	// 将文件内容复制到 HTTP 响应体中
+	http.ServeFile(w, r, filepath)
 }

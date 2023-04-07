@@ -46,12 +46,12 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
-	f.Close()
 	io.Copy(f, file)
+	f.Close()
 
 	fmt.Fprintf(w, "Successfully Uploaded File\n")
 
 	sign.Sign(handler.Filename, func(msg string) {
-		fmt.Println(msg)
+		fmt.Fprintln(w, msg)
 	})
 }

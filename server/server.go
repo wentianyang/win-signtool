@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/yangtianwen/win-signtool/sign"
 )
@@ -51,7 +52,21 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintf(w, "Successfully Uploaded File\n")
 
-	sign.Sign(handler.Filename, func(msg string) {
+	sign.Sign(handler.Filename, func(err error, msg string) {
 		fmt.Fprintln(w, msg)
+
+		// 打开签名后的文件
+		signedFile, err := os.Open(handler.Filename)
+		if err != nil {
+			fmt.Println("Error Opening Signed File")
+			fmt.Println(err)
+			return
+		}
+		defer signedFile.Close()
+
+		// 将签名后的文件发送给客户端
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(handler.Filename)))
+		io.Copy(w, signedFile)
 	})
 }

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -57,26 +56,27 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, msg)
 
 		// 打开签名后的文件
-		signedFile, err := os.Open(handler.Filename)
+		fileToDownload, err := os.Open(handler.Filename)
 		if err != nil {
 			fmt.Println("Error Opening Signed File")
 			fmt.Println(err)
 			return
 		}
-		defer signedFile.Close()
+		defer fileToDownload.Close()
 
-		// 读取签名后的文件到内存缓冲区
-		buf := new(bytes.Buffer)
-		_, err = io.Copy(buf, signedFile)
+		// 设置响应头部，以便将文件下载到客户端
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(handler.Filename)))
+
+		// 将签名后的文件发送给客户端
+		_, err = io.Copy(w, fileToDownload)
 		if err != nil {
-			fmt.Println("Error Reading Signed File")
+			fmt.Println("Error Writing File Content")
 			fmt.Println(err)
 			return
 		}
 
-		// 将缓冲区中的内容写入响应的输出流
-		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(signedFile.Name())))
-		w.Write(buf.Bytes())
+		// 删除上传的文件和签名后的文件
+		os.Remove(handler.Filename)
 	})
 }
